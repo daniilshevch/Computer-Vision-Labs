@@ -20,11 +20,11 @@ def load_or_create_image(image_path: str = None) -> np.ndarray:
     return cv2.subtract(img, noise)
 
 
-def transform_image(img: np.ndarray, angle_degree: float, dx: float, dy: float, contrast_alpha: float = 1.3):
+def transform_image(img: np.ndarray, angle_degree: float, dx: float, dy: float, contrast_alpha: float = 1.3, scale = 1.0):
     h, w = img.shape[:2]
     center = (w // 2, h // 2)
 
-    M_rotated = cv2.getRotationMatrix2D(center, angle_degree, 1.0)
+    M_rotated = cv2.getRotationMatrix2D(center, angle_degree, scale) #scale = 1.0
     M_rotated[0, 2] += dx
     M_rotated[1, 2] += dy
 
@@ -39,19 +39,20 @@ def custom_brief_matcher(desc1: np.ndarray, desc2: np.ndarray, cross_check: bool
         return []
 
     xor_matrix = np.bitwise_xor(desc1[:, np.newaxis, :], desc2[np.newaxis, :, :])
-    dist_matrix = np.unpackbits(xor_matrix, axis=-1).sum(axis=-1)
+    dist_matrix = np.unpackbits(xor_matrix, axis=-1).sum(axis=-1) #матриця N x M, де N - кількість дескрипторів у desc1, M - кількість дескрипторів у desc2
+
 
     matches = []
 
     if cross_check:
-        best_in_desc2 = np.argmin(dist_matrix, axis=1)
-        best_in_desc1 = np.argmin(dist_matrix, axis=0)
+        best_in_desc2 = np.argmin(dist_matrix, axis=1) #по рядках
+        best_in_desc1 = np.argmin(dist_matrix, axis=0) #по стовпцях
 
         for i, j in enumerate(best_in_desc2):
             if best_in_desc1[j] == i:
                 dmatch = cv2.DMatch(_queryIdx=i, _trainIdx=j, _imgIdx=0, _distance=float(dist_matrix[i, j]))
                 matches.append(dmatch)
-    else:
+    else: #тест Девіда Лоу
         for i in range(dist_matrix.shape[0]):
             sorted_indices = np.argsort(dist_matrix[i])
             d1 = dist_matrix[i, sorted_indices[0]]
@@ -158,6 +159,21 @@ def decompose_affine_transform(M: np.ndarray, img_shape: tuple):
     est_dy = float(M[1, 2] - b * cx - (1.0 - a) * cy)
 
     return est_angle_deg, est_dx, est_dy
+
+def decompose_affine_with_scale(M: np.ndarray, img_shape: tuple):
+    ##додаткова функція, якщо враховується коефіцієнт масштабування
+    h, w = img_shape[:2]
+    cx, cy = w // 2, h // 2
+
+    a = M[0, 0]
+    b = M[0, 1]
+
+    est_scale = float(np.hypot(a, b))
+    est_angle_deg = float(np.degrees(np.arctan2(b, a)))
+    est_dx = float(M[0, 2] - (1.0 - a) * cx + b * cy)
+    est_dy = float(M[1, 2] - b * cx - (1.0 - a) * cy)
+
+    return est_scale, est_angle_deg, est_dx, est_dy
 
 def run_experiment(
     image_path: str = None,
