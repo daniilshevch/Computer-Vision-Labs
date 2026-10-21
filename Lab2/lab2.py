@@ -27,13 +27,12 @@ def transform_image(img: np.ndarray, angle_degree: float, dx: float, dy: float, 
     return transformed_img, M_rotated
 
 
-def custom_brief_matcher(desc1: np.ndarray, desc2: np.ndarray, cross_check: bool = True, ratio_thresh: float = 0.8):
+def custom_binary_matcher(desc1: np.ndarray, desc2: np.ndarray, cross_check: bool = True, ratio_thresh: float = 0.8):
     if desc1 is None or desc2 is None or len(desc1) == 0 or len(desc2) == 0:
         return []
 
     xor_matrix = np.bitwise_xor(desc1[:, np.newaxis, :], desc2[np.newaxis, :, :])
     dist_matrix = np.unpackbits(xor_matrix, axis=-1).sum(axis=-1) #матриця N x M, де N - кількість дескрипторів у desc1, M - кількість дескрипторів у desc2
-
 
     matches = []
 
@@ -113,9 +112,20 @@ def extract_features(img: np.ndarray, threshold: int = 25, descriptor_bytes: int
 
     return keypoints, descriptors
 
+
+def extract_features_orb(img: np.ndarray, nfeatures: int = 2000):
+    orb = cv2.ORB_create(
+        nfeatures=nfeatures,
+        scaleFactor=1.2,
+        nlevels=8,
+        firstLevel=0
+    )
+    keypoints, descriptors = orb.detectAndCompute(img, None)
+    return keypoints, descriptors
+
 def benchmark_matchers(des1: np.ndarray, des2: np.ndarray):
     t0 = time.time()
-    custom_matches = custom_brief_matcher(des1, des2, cross_check=True)
+    custom_matches = custom_binary_matcher(des1, des2, cross_check=True)
     t_custom = time.time() - t0
 
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
@@ -179,7 +189,8 @@ def run_experiment(
     true_dx: float = 35.0,
     true_dy: float = -20.0,
     contrast_alpha: float = 1.4,
-    experiment_name: str = "Експеримент"
+    experiment_name: str = "Експеримент",
+    descriptor: str = "BRIEF"
 ):
     print(f"\n{'='*20} {experiment_name} {'='*20}")
     print(f"Задані параметри: Кут = {true_angle}°, dx = {true_dx}px, dy = {true_dy}px")
@@ -193,8 +204,12 @@ def run_experiment(
         contrast_alpha=contrast_alpha
     )
 
-    kp1, des1 = extract_features(img1, threshold=25)
-    kp2, des2 = extract_features(img2, threshold=25)
+    if descriptor == "BRIEF":
+        kp1, des1 = extract_features(img1, threshold=25)
+        kp2, des2 = extract_features(img2, threshold=25)
+    else:
+        kp1, des1 = extract_features_orb(img1, nfeatures=2000)
+        kp2, des2 = extract_features_orb(img2, nfeatures=2000)
     print(f"Знайдено точок: Img1 = {len(kp1)}, Img2 = {len(kp2)}")
 
     if des1 is None or des2 is None:
@@ -264,7 +279,26 @@ def main():
         true_dx = -20.0,
         true_dy = 30.0,
         contrast_alpha = 0.7,
-        experiment_name="Реальне фото (Львів, день)"
+        experiment_name="Львів, день)"
+    )
+
+    run_experiment(
+        image_path="Images/uz-mountain.jpg",
+        true_angle= 30.0,
+        true_dx = 25.0,
+        true_dy = 20.0,
+        contrast_alpha = 0.8,
+        experiment_name="Поїзд в карпатах (день)"
+    )
+
+    run_experiment(
+        image_path="Images/uz-mountain.jpg",
+        true_angle= 30.0,
+        true_dx = 25.0,
+        true_dy = 20.0,
+        contrast_alpha = 0.8,
+        experiment_name="Поїзд в карпатах (день)",
+        descriptor="ORB"
     )
 
 
