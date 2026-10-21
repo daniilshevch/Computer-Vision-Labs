@@ -9,15 +9,8 @@ def load_or_create_image(image_path: str = None) -> np.ndarray:
         img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
         if img is not None:
             return cv2.resize(img, (500, 500))
-
-    img = np.full((500, 500), 200, dtype=np.uint8)
-    cv2.rectangle(img, (50, 50), (200, 200), 50, -1)
-    cv2.circle(img, (350, 150), 60, 0, -1)
-    cv2.polylines(img, [np.array([[100, 400], [250, 300], [400, 450]])], True, 30, 8)
-    cv2.putText(img, "LPNU AI", (120, 250), cv2.FONT_HERSHEY_SIMPLEX, 1.8, 0, 4)
-
-    noise = np.random.randint(0, 30, (500, 500), dtype=np.uint8)
-    return cv2.subtract(img, noise)
+    else:
+        return np.full((500, 500), 200, dtype=np.uint8)
 
 
 def transform_image(img: np.ndarray, angle_degree: float, dx: float, dy: float, contrast_alpha: float = 1.3, scale = 1.0):
@@ -46,20 +39,20 @@ def custom_brief_matcher(desc1: np.ndarray, desc2: np.ndarray, cross_check: bool
 
     if cross_check:
         best_in_desc2 = np.argmin(dist_matrix, axis=1) #по рядках
-        best_in_desc1 = np.argmin(dist_matrix, axis=0) #по стовпцях
+        best_in_desc1 = np.argmin(dist_matrix, axis=0) #по стопцях
 
-        for i, j in enumerate(best_in_desc2):
-            if best_in_desc1[j] == i:
-                dmatch = cv2.DMatch(_queryIdx=i, _trainIdx=j, _imgIdx=0, _distance=float(dist_matrix[i, j]))
+        for first_descriptor_index, second_descriptor_index in enumerate(best_in_desc2):
+            if best_in_desc1[second_descriptor_index] == first_descriptor_index:
+                dmatch = cv2.DMatch(_queryIdx=first_descriptor_index, _trainIdx=second_descriptor_index, _imgIdx=0, _distance=float(dist_matrix[first_descriptor_index, second_descriptor_index]))
                 matches.append(dmatch)
     else: #тест Девіда Лоу
-        for i in range(dist_matrix.shape[0]):
-            sorted_indices = np.argsort(dist_matrix[i])
-            d1 = dist_matrix[i, sorted_indices[0]]
-            d2 = dist_matrix[i, sorted_indices[1]]
+        for first_descriptor_index in range(dist_matrix.shape[0]):
+            sorted_indices = np.argsort(dist_matrix[first_descriptor_index])
+            d1 = dist_matrix[first_descriptor_index, sorted_indices[0]]
+            d2 = dist_matrix[first_descriptor_index, sorted_indices[1]]
 
             if d1 < ratio_thresh * d2:
-                dmatch = cv2.DMatch(_queryIdx=i, _trainIdx=sorted_indices[0], _imgIdx=0, _distance=float(d1))
+                dmatch = cv2.DMatch(_queryIdx=first_descriptor_index, _trainIdx=sorted_indices[0], _imgIdx=0, _distance=float(d1))
                 matches.append(dmatch)
 
     matches = sorted(matches, key=lambda x: x.distance)
@@ -78,12 +71,14 @@ def custom_ransac_affine(points1: np.ndarray, points2: np.ndarray, max_iters: in
 
     for _ in range(max_iters):
         indices = np.random.choice(points_amount, 3, replace=False)
-        source_sample = points1[indices]
+        source_sample_homo = points1_homo[indices]
         destination_sample = points2[indices]
 
         try:
-            M = cv2.getAffineTransform(source_sample.astype(np.float32), destination_sample.astype(np.float32))
-        except cv2.error:
+            M_T = np.linalg.solve(source_sample_homo, destination_sample)
+            M = M_T.T
+            #M = cv2.getAffineTransform(source_sample.astype(np.float32), destination_sample.astype(np.float32))
+        except np.linalg.LinAlgError:
             continue
 
         projected = (M @ points1_homo.T).T
@@ -96,9 +91,12 @@ def custom_ransac_affine(points1: np.ndarray, points2: np.ndarray, max_iters: in
             best_M = M
 
     if len(best_inliers) >= 3:
-        points1_inliers = points1[best_inliers].astype(np.float32)
+        points1_inliers_homo = points1_homo[best_inliers].astype(np.float32)
         points2_inliers = points2[best_inliers].astype(np.float32)
-        best_M, _ = cv2.estimateAffinePartial2D(points1_inliers, points2_inliers)
+
+        M_T, _, _, _ = np.linalg.lstsq(points1_inliers_homo, points2_inliers, rcond=None)
+        best_M = M_T.T
+        #best_M, _ = cv2.estimateAffinePartial2D(points1_inliers, points2_inliers)
 
     inlier_mask = np.zeros(points_amount, dtype=bool)
     inlier_mask[best_inliers] = True
@@ -235,14 +233,6 @@ def run_experiment(
 
 def main():
     run_experiment(
-        image_path=None,
-        true_angle=25.0,
-        true_dx=35.0,
-        true_dy=-20.0,
-        experiment_name="Синтетичний тест"
-    )
-
-    run_experiment(
         image_path="Images/ternopil.jpg",
         true_angle=25.0,
         true_dx=35.0,
@@ -266,6 +256,15 @@ def main():
         true_dy = -20.0,
         contrast_alpha = 1.4,
         experiment_name="Реальне фото (Наукова, ніч)"
+    )
+
+    run_experiment(
+        image_path="Images/input.jpg",
+        true_angle=-22.0,
+        true_dx = -20.0,
+        true_dy = 30.0,
+        contrast_alpha = 0.7,
+        experiment_name="Реальне фото (Львів, день)"
     )
 
 
