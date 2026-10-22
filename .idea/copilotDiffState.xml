@@ -12,6 +12,15 @@
             </PendingDiffInfo>
           </value>
         </entry>
+        <entry key="$PROJECT_DIR$/README.md">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/README.md" />
+              <option name="newFile" value="true" />
+              <option name="updatedContent" value="# ComputerVisionNew&#10;&#10;Репозиторій з лабораторними роботами з комп'ютерного зору (4 курс).&#10;&#10;## Структура проєкту&#10;&#10;- `Lab1/` - класична обробка зображень: гістограми, зміна яскравості, RGB/HSV, морфологія.&#10;- `Lab2/` - локальні ознаки та оцінка афінного перетворення (FAST + BRIEF, custom matcher, custom RANSAC).&#10;- `Lab3/` - класифікація Fashion-MNIST у `Jupyter Notebook` (архітектури ResNeXt/Siamese).&#10;- `Lab4/` - детекція об'єктів у `Jupyter Notebook` (SSD-пайплайн).&#10;- `ШІ-31_Шевченко_Данііл_lab*.docx` - звітні документи по лабораторних.&#10;&#10;## Навігація по лабораторних&#10;&#10;### Lab 1&#10;- Код: `Lab1/lab1.py`, `Lab1/lab1_colours.py`, `Lab1/extra.py`&#10;- Дані: `Lab1/Images/`&#10;- Опис: `Lab1/README.md`&#10;&#10;### Lab 2&#10;- Код: `Lab2/lab2.py`&#10;- Дані: `Lab2/Images/`&#10;- Опис: `Lab2/README.md`&#10;&#10;### Lab 3&#10;- Ноутбук: `Lab3/lab3.ipynb`&#10;- Дані: `Lab3/data/FashionMNIST/raw/`&#10;&#10;### Lab 4&#10;- Ноутбук: `Lab4/lab4.ipynb`&#10;&#10;## Базові залежності&#10;Точний список залежить від конкретної лабораторної, але загалом використовується:&#10;- Python 3.x&#10;- `numpy`&#10;- `matplotlib`&#10;- `opencv-python` / `opencv-contrib-python`&#10;- `torch`, `torchvision` (для Lab3/Lab4)&#10;- `jupyter` (для Lab3/Lab4)&#10;&#10;&gt; Примітка: для BRIEF у Lab2 потрібен модуль `cv2.xfeatures2d`, який зазвичай доступний у `opencv-contrib-python`.&#10;&#10;## Як запускати&#10;&#10;### Lab 1 (скрипти)&#10;```powershell&#10;cd &quot;D:\University\4Course\ComputerVisionNew\Lab1&quot;&#10;python .\lab1.py&#10;python .\lab1_colours.py&#10;python .\extra.py&#10;```&#10;&#10;### Lab 2 (скрипт)&#10;```powershell&#10;cd &quot;D:\University\4Course\ComputerVisionNew\Lab2&quot;&#10;python .\lab2.py&#10;```&#10;&#10;### Lab 3-4 (ноутбуки)&#10;```powershell&#10;cd &quot;D:\University\4Course\ComputerVisionNew&quot;&#10;jupyter notebook&#10;```&#10;Після запуску відкрий `Lab3/lab3.ipynb` або `Lab4/lab4.ipynb` у браузері.&#10;&#10;## Призначення репозиторію&#10;- Зібрати всі лабораторні в одному місці.&#10;- Зафіксувати практичні реалізації з обробки зображень, локальних ознак, класифікації та детекції.&#10;- Спростити перевірку коду і підготовку звітів.&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
       </map>
     </option>
   </component>

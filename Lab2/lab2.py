@@ -189,6 +189,7 @@ def run_experiment(
     true_dx: float = 35.0,
     true_dy: float = -20.0,
     contrast_alpha: float = 1.4,
+    scale_factor: float = 1.0,
     experiment_name: str = "Експеримент",
     descriptor: str = "BRIEF"
 ):
@@ -201,7 +202,8 @@ def run_experiment(
         angle_degree=true_angle,
         dx=true_dx,
         dy=true_dy,
-        contrast_alpha=contrast_alpha
+        contrast_alpha=contrast_alpha,
+        scale=scale_factor
     )
 
     if descriptor == "BRIEF":
@@ -226,17 +228,23 @@ def run_experiment(
     M_est, inlier_mask = custom_ransac_affine(points1, points2, max_iters=2000, inlier_threshold=3.0)
 
     if M_est is not None:
-        est_angle_deg, est_dx, est_dy = decompose_affine_transform(M_est, img1.shape)
+        if scale_factor == 1.0:
+            est_angle_deg, est_dx, est_dy = decompose_affine_transform(M_est, img1.shape)
+        else:
+            est_scale, est_angle_deg, est_dx, est_dy = decompose_affine_with_scale(M_est, img1.shape)
 
         err_angle = abs(true_angle - est_angle_deg)
         err_dx = abs(true_dx - est_dx)
         err_dy = abs(true_dy - est_dy)
+        err_scale = abs(scale_factor - est_scale) if scale_factor != 1.0 else None
 
         print("\n--- Результати RANSAC ---")
         print(f"Оцінений кут: {est_angle_deg:.2f}° (Помилка: {err_angle:.2f}°)")
         print(f"Оцінений зсув X: {est_dx:.2f}px (Помилка: {err_dx:.2f}px)")
         print(f"Оцінений зсув Y: {est_dy:.2f}px (Помилка: {err_dy:.2f}px)")
         print(f"Інлаєри: {np.sum(inlier_mask)} / {len(custom_matches)}")
+        if scale_factor != 1.0:
+            print(f"Оцінений масштаб: {est_scale:.4f} (Помилка: {err_scale:.4f})")
 
         plot_matches(
             img1, kp1, img2, kp2,
@@ -297,6 +305,16 @@ def main():
         true_dx = 25.0,
         true_dy = 20.0,
         contrast_alpha = 0.8,
+        experiment_name="Поїзд в карпатах (день)",
+        descriptor="ORB"
+    )
+    run_experiment(
+        image_path="Images/uz-mountain.jpg",
+        true_angle= 30.0,
+        true_dx = 25.0,
+        true_dy = 20.0,
+        contrast_alpha = 0.8,
+        scale_factor=0.7,
         experiment_name="Поїзд в карпатах (день)",
         descriptor="ORB"
     )
